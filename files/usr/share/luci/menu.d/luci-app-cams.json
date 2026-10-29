@@ -7,7 +7,9 @@
       "path": "cams/settings"
     },
     "depends": {
-      "acl": [ "luci-app-cams" ]
+      "acl": [
+        "luci-app-cams"
+      ]
     }
   },
   "admin/services/cams-info": {
@@ -18,8 +20,9 @@
       "path": "cams/info"
     },
     "depends": {
-      "acl": [ "luci-app-cams" ],
-      "uci": { "cams": { "defaults": { "info": "1" } } }
+      "acl": [
+        "luci-app-cams"
+      ]
     }
   }
 }

@@ -191,6 +191,13 @@ return L.view.extend({
 	},
 
 	render: function() {
+		if (uci.get('cams', 'defaults', 'info') !== '1') {
+			return E([
+				E('h2', {}, 'Вебкамери: трафік і потік'),
+				E('p', {}, 'Статистика вимкнена. Увімкніть «Меню трафіку» в розділі «Загальне» на сторінці '),
+				E('p', {}, E('a', { href: L.url('admin', 'services', 'cams') }, 'Вебкамери'))
+			]);
+		}
 		box = E('div', {});
 
 		var sel = E('select', {
