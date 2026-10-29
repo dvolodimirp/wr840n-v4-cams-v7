@@ -1,0 +1,27 @@
+CONFIG_TARGET_ramips=y
+CONFIG_TARGET_ramips_mt76x8=y
+CONFIG_TARGET_ramips_mt76x8_DEVICE_tl-wr840n-v4=y
+
+# do not build the extra initramfs image
+# CONFIG_TARGET_ROOTFS_INITRAMFS is not set
+
+# USB host (MT7628: EHCI + OHCI), UVC webcams, MJPEG streamer
+CONFIG_PACKAGE_kmod-usb-core=y
+CONFIG_PACKAGE_kmod-usb2=y
+CONFIG_PACKAGE_kmod-usb-ohci=y
+CONFIG_PACKAGE_kmod-video-core=y
+CONFIG_PACKAGE_kmod-video-uvc=y
+CONFIG_PACKAGE_mjpg-streamer=y
+CONFIG_PACKAGE_mjpg-streamer-input-uvc=y
+CONFIG_PACKAGE_mjpg-streamer-output-http=y
+
+# LuCI with Ukrainian (the webcam page needs rpcd-mod-file)
+CONFIG_PACKAGE_luci=y
+CONFIG_LUCI_LANG_uk=y
+CONFIG_PACKAGE_luci-i18n-base-uk=y
+CONFIG_PACKAGE_rpcd-mod-file=y
+
+# not needed: PPP/PPPoE, USB storage
+# CONFIG_PACKAGE_ppp is not set
+# CONFIG_PACKAGE_ppp-mod-pppoe is not set
+# CONFIG_PACKAGE_kmod-usb-storage is not set

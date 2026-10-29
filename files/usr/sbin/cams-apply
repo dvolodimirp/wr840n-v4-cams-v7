@@ -1,0 +1,26 @@
+#!/bin/sh
+# applies camera controls (brightness etc.) to the running streams, no restart needed.
+# mjpg-streamer: via its HTTP command API; ustreamer has none, so v4l2-ctl sets the UVC controls directly.
+. "${CAMS_LIB:-/usr/lib/cams.sh}"
+"$BIN/cams-list" > /tmp/cams.apply.list
+while IFS='|' read -r dev sec port user pass res fps br co sa ga sp pl name rot eng rest; do
+  if [ "$eng" = ustreamer ]; then
+    for pair in "brightness $br" "contrast $co" "saturation $sa" "gamma $ga" "sharpness $sp" "power_line_frequency $pl"; do
+      cname=${pair%% *}
+      val=${pair#* }
+      [ -n "$val" ] || continue
+      v4l2-ctl -d "$dev" -c "$cname=$val" >/dev/null 2>&1
+    done
+    continue
+  fi
+  base="http://127.0.0.1:$port"
+  [ -n "$user" ] && base="http://$user:$pass@127.0.0.1:$port"
+  for pair in "9963776 $br" "9963777 $co" "9963778 $sa" "9963792 $ga" "9963803 $sp" "9963800 $pl"; do
+    id=${pair%% *}
+    val=${pair#* }
+    [ "$val" = "$pair" ] && continue
+    [ -n "$val" ] || continue
+    wget -q -T 5 -O /dev/null "$base/?action=command&id=$id&group=1&value=$val" >/dev/null 2>&1
+  done
+done < /tmp/cams.apply.list
+exit 0

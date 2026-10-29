@@ -1,0 +1,60 @@
+#!/bin/sh
+# one line per enabled camera:
+# dev|sec|port|user|pass|res|fps|brightness|contrast|saturation|gamma|sharpness|powerline|name|rotate|
+#   engine|quality|nodelay|slowdown|exit_on_error|drop_same|buffers|workers|note
+# engine = effective engine (ustreamer|mjpg); note = rotfallback|rotignored|"" (see below)
+. "${CAMS_LIB:-/usr/lib/cams.sh}"
+used=" "
+for n in $(cam_nodes); do
+  sec=$(cam_sec "$n")
+  [ "$(cg "$sec" enabled)" = "0" ] && continue
+  p=$(cg "$sec" port)
+  [ -n "$p" ] && used="$used$p "
+done
+dengine=$(cg defaults engine)
+case "$dengine" in ustreamer|mjpg) ;; *) dengine=ustreamer ;; esac
+have_us=0; [ -x /usr/bin/ustreamer ] && have_us=1
+have_mj=0; [ -x /usr/bin/mjpg_streamer ] && have_mj=1
+next=8080
+for n in $(cam_nodes); do
+  sec=$(cam_sec "$n")
+  [ "$(cg "$sec" enabled)" = "0" ] && continue
+  port=$(cg "$sec" port)
+  if [ -z "$port" ]; then
+    while :; do
+      case "$used" in
+        *" $next "*) next=$((next + 1)) ;;
+        *) break ;;
+      esac
+    done
+    port=$next
+    used="$used$next "
+  fi
+  user=$(cg "$sec" user)
+  pass=$(cg "$sec" pass)
+  if [ -z "$user" ] || [ -z "$pass" ]; then user=""; pass=""; fi
+  res=$(cg "$sec" res); [ -n "$res" ] || res=352x288
+  fps=$(cg "$sec" fps); [ -n "$fps" ] || fps=5
+  rot=$(cg "$sec" rotate); [ "$rot" = "180" ] || rot=0
+  # engine: per camera "auto" (default) inherits cams.defaults.engine.
+  # ustreamer cannot rotate these cameras (no hardware control), so an "auto" camera with
+  # rotate=180 falls back to mjpg-streamer; an explicit ustreamer choice is honoured but rotation is ignored.
+  req=$(cg "$sec" engine)
+  note=""
+  case "$req" in
+    ustreamer|mjpg) eng=$req ;;
+    *) eng=$dengine
+       if [ "$rot" = "180" ] && [ "$eng" = ustreamer ] && [ "$have_mj" = 1 ]; then
+         eng=mjpg; note=rotfallback
+       fi ;;
+  esac
+  [ "$eng" = ustreamer ] && [ "$have_us" = 0 ] && eng=mjpg
+  [ "$eng" = mjpg ] && [ "$have_mj" = 0 ] && eng=ustreamer
+  [ "$eng" = ustreamer ] && [ "$rot" = "180" ] && [ -z "$note" ] && note=rotignored
+  q=$(cg "$sec" quality); [ -n "$q" ] || q=$(cg defaults quality); [ -n "$q" ] || q=80
+  nd=$(cg "$sec" nodelay); [ -n "$nd" ] || nd=1
+  sl=$(cg "$sec" slowdown); [ -n "$sl" ] || sl=0
+  xe=$(cg "$sec" exit_on_error); [ -n "$xe" ] || xe=0
+  echo "/dev/$(basename "$n")|$sec|$port|$user|$pass|$res|$fps|$(cg "$sec" brightness)|$(cg "$sec" contrast)|$(cg "$sec" saturation)|$(cg "$sec" gamma)|$(cg "$sec" sharpness)|$(cg "$sec" powerline)|$(cat "$n/name")|$rot|$eng|$q|$nd|$sl|$xe|$(cg "$sec" drop_same)|$(cg "$sec" buffers)|$(cg "$sec" workers)|$note"
+done
+exit 0

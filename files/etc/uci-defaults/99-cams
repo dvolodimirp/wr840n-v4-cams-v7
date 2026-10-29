@@ -1,0 +1,18 @@
+#!/bin/sh
+# first boot: camera service defaults, watchdog, Ukrainian LuCI
+touch /etc/config/cams
+chmod 600 /etc/config/cams
+if ! uci -q get cams.defaults >/dev/null; then
+  uci set cams.defaults=defaults
+  uci set cams.defaults.res=352x288
+  uci set cams.defaults.fps=5
+  uci set cams.defaults.engine=ustreamer
+  uci set cams.defaults.info=0
+  uci commit cams
+fi
+grep -q cams-watchdog /etc/crontabs/root 2>/dev/null || echo "* * * * * /usr/sbin/cams-watchdog" >> /etc/crontabs/root
+/etc/init.d/cron enable
+/etc/init.d/cams enable
+uci -q set luci.main.lang=uk
+uci -q commit luci
+exit 0
